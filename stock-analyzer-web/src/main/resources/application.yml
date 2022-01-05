@@ -1,0 +1,20 @@
+
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://192.168.228.137:3306/stock-analyzer
+    username: test
+    password: Root@123
+  mvc:
+    view:
+      prefix: /jsp/
+      suffix: .jsp
+
+mybatis-plus:
+  mapper-locations: classpath*:cn/javacoder/stockanalyze/common/mapper/xml/*Mapper.xml
+#server:
+#  tomcat:
+#    basedir: D:/workspace/stock-analyzer/stock-analyzer-web
+#
+#pathPlaning: costBased

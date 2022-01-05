@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="debug" packages="cn.javacoder">
+	<properties>
+		<property name="LOG_HOME">/var/log/</property>
+		<property name="SERVCIE_HOME">stock-analyzer</property>
+	</properties>
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"/>
+			<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss:SSS}   %p [%t][%c{1}#%M:%L] - %m%n"/>
+		</Console>
+		<RollingFile name="RollingFile" fileName="${LOG_HOME}/${SERVCIE_HOME}.log"
+			filePattern="${LOG_HOME}/$${date:yyyy-MM}/${SERVCIE_HOME}-%d{yyyy-MM-dd-HH}-%i.log.gz" filePermissions="rw-r--r--">
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
+			<PatternLayout alwaysWriteExceptions="false">
+				<Pattern>%d{yyyy-MM-dd HH:mm:ss:SSS} %p [%t][%c{1}#%M:%L] - %m%n
+				</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="24" modulate="true"/>
+				<SizeBasedTriggeringPolicy size="250 MB"/>
+			</Policies>
+			<DefaultRolloverStrategy max="50"/>
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Root level="debug">
+			<AppenderRef ref="Console"/>
+			<AppenderRef ref="RollingFile"/>
+		</Root>
+		<Logger name="cn.javacoder" level="DEBUG" additivity="false">
+			<AppenderRef ref="Console"/>
+			<AppenderRef ref="RollingFile"/>
+		</Logger>
+	</Loggers>
+</Configuration>
