@@ -122,4 +122,13 @@ public class FetchController {
         model.addAttribute("list", result);
         return "trendList";
     }
+
+
+    @RequestMapping("/forecastRally")
+    @ResponseBody
+    public Object forecastRally() throws Exception {
+        List<String> result = fetchTrendService.forecastRally();
+        return result;
+    }
+
 }

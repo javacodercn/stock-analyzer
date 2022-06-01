@@ -146,6 +146,43 @@ public class FetchTrendService {
         return list;
     }
 
+    /**
+     *
+     * @return
+     * @throws Exception
+     */
+    public  List<String> forecastRally() throws Exception {
+        List<Company> watchOn = companyService.list();
+        if (watchOn.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<String> result = new ArrayList<>();
+        for (Company company : watchOn) {
+            if(company.getPe() > 5000 || company.getPe() < 0) {
+                continue;
+            }
+            StringBuilder sb = new StringBuilder();
+            log.info("process company:" + company.getName());
+            sb.append("{ company :" + company.getStockCode() + "." + company.getName() + ":");
+            List<DailyInfo> list = fetchOneCompany(company);
+            if(list == null || list.size() < 11) {
+                continue;
+            }
+            DailyInfo curr = list.get(list.size() -1);
+            List<DailyInfo> subList =list.subList(list.size()-10, list.size() -1);
+            double volume = subList.stream().map(DailyInfo::getTradeVolume).mapToLong(Long::longValue).average().getAsDouble();
+            //double sum = subList.stream().map(DailyInfo::getTradeSum).mapToLong(Long::longValue).average().getAsDouble();
+            if(100d *(curr.getClosePrice() - curr.getOpenPrice()) / curr.getOpenPrice()  > 5) {
+                double ratio = 100d *(curr.getClosePrice() - curr.getOpenPrice()) / curr.getOpenPrice();
+                //涨幅大于9.5%
+                if(volume * 1.8 < curr.getTradeVolume()) {
+                    sb.append( ", price:" + curr.getHighestPrice() + ", pe:"  + company.getPe() + ", ratio:" + Double.valueOf(ratio).intValue() + "},");
+                    result.add(sb.toString());
+                }
+            }
+        }
+        return result;
+    }
 
     public  List<String> fetchTrend() throws Exception {
         List<Company> watchOn =  companyService.listNeedWatchOn();
