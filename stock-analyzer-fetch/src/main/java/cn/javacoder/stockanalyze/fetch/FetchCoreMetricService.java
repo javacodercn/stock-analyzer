@@ -32,7 +32,7 @@ public class FetchCoreMetricService {
 
 
     public void fetchCoreMetric(String exchange) throws Exception {
-        List<Company> companies = companyService.listByExchangeCode(exchange);
+        List<Company> companies = companyService.listByExchangeCode(exchange, null);
         for(Company company: companies) {
             List<HistoryCoreMetric> exists = historyCoreMetricService.getByStockCode(company.getStockCode());
             List<HistoryCoreMetric> list = fetchCoreMetricForOneCompany(company);

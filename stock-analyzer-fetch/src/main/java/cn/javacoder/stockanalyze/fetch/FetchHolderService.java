@@ -60,7 +60,7 @@ public class FetchHolderService {
 
 
     public void fetchHolder(String exchange, String endDate) throws Exception {
-        List<Company> companyList = companyService.listByExchangeCode(exchange);
+        List<Company> companyList = companyService.listByExchangeCode(exchange, null);
         for(Company company : companyList) {
             if(holderChangeHistoryService.holderHistoryExists(company.getStockCode(), MiscUtils.parseDate(endDate))) {
                 log.info("skip stockCode:{}, endDate:{}", company.getStockCode(), endDate);

@@ -46,7 +46,7 @@ public class FetchBoardService {
     }
 
     public void fetchBoard(String exchange) throws Exception {
-        List<Company> companyList = companyService.listByExchangeCode(exchange);
+        List<Company> companyList = companyService.listByExchangeCode(exchange, null);
         for(Company company : companyList) {
             if(boardService.exist(company.getStockCode())){
                 continue;

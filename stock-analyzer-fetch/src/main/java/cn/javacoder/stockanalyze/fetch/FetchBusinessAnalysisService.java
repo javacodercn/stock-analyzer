@@ -16,6 +16,11 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Stream;
 
 /**
  * 从东方财富 wap 经营分析抓取
@@ -32,27 +37,36 @@ public class FetchBusinessAnalysisService {
     @Resource
     private BusinessAnalysisService businessAnalysisService;
 
+
     public void fetch(String exchange) throws Exception {
-        List<Company> companies = companyService.listByExchangeCode(exchange);
+        List<Company> companies = companyService.listByExchangeCode(exchange, null);
         for(Company company : companies) {
-            if(businessAnalysisService.exist(company.getStockCode())){
+            if (businessAnalysisService.exist(company.getStockCode())) {
                 continue;
             }
             List<BusinessAnalysis> list = fetchOneCompany(company);
-            businessAnalysisService.saveBatch(list);
+            if(list != null) {
+                businessAnalysisService.saveBatch(list);
+            }
         }
+
     }
 
-    public List<BusinessAnalysis> fetchOneCompany(Company company) throws Exception {
+    public List<BusinessAnalysis> fetchOneCompany(Company company)  {
         log.info("process " + company.getStockCode());
-        Connection conn = Jsoup.connect(url + company.getExchange() + company.getStockCode());
-        conn.method(Connection.Method.GET);
-        conn.header("X-Requested-With","XMLHttpRequest");
-        conn.header("accept", "text/html,application/json");
-        conn.ignoreContentType(true);
-        conn.header("user-agent", "Chrome/96.0.4664.110");
-        String json = conn.execute().body();
-        return parse(company.getStockCode(), json);
+        try {
+            Connection conn = Jsoup.connect(url + company.getExchange() + company.getStockCode());
+            conn.method(Connection.Method.GET);
+            conn.header("X-Requested-With", "XMLHttpRequest");
+            conn.header("accept", "text/html,application/json");
+            conn.ignoreContentType(true);
+            conn.header("user-agent", "Chrome/96.0.4664.110");
+            String json = conn.execute().body();
+            return parse(company.getStockCode(), json);
+        }catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     private List<BusinessAnalysis> parse(String _scode, String content) {
@@ -67,6 +81,7 @@ public class FetchBusinessAnalysisService {
         if(arr.size() == 0){
             return result;
         }
+        BusinessAnalysis cmp = null;
         for(int i =0 ; i< arr.size(); i++) {
             JSONObject obj = arr.getJSONObject(i);
             String itemName = obj.getString("ITEM_NAME");
@@ -86,6 +101,11 @@ public class FetchBusinessAnalysisService {
                     .mbpRatio(MiscUtils.d2p(obj.getString("MBR_RATIO")))
                     .irank(obj.getIntValue("RANK"))
                     .build();
+            if(cmp == null) {
+                cmp = analysis;
+            } else if(cmp.getReportDate().after(analysis.getReportDate()) || cmp.getMainopType() != analysis.getMainopType()) {
+                break;
+            }
             result.add(analysis);
         }
         return result;

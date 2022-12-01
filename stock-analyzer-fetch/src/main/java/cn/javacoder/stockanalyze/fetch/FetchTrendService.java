@@ -147,12 +147,12 @@ public class FetchTrendService {
     }
 
     /**
-     *
-     * @return
-     * @throws Exception
+     *  选择量价齐升的，
+     *  量: 当天比前10天的平均值大1.8倍
+     *  价: 涨幅大于5%
      */
     public  List<String> forecastRally() throws Exception {
-        List<Company> watchOn = companyService.list();
+        List<Company> watchOn = companyService.listNeedWatchOn();
         if (watchOn.isEmpty()) {
             return new ArrayList<>();
         }

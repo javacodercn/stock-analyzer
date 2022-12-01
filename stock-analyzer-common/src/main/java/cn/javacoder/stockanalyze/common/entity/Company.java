@@ -2,7 +2,6 @@ package cn.javacoder.stockanalyze.common.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import jdk.nashorn.internal.objects.annotations.Constructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -59,4 +58,13 @@ public class Company {
     private boolean leadingPosition;
 
     private boolean watchOn;
+
+    private Date updateTime;
+
+    /**
+     * 一级大类
+     */
+    private String em1;
+    private String em2;
+    private String em3;
 }

@@ -3,8 +3,8 @@
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://192.168.228.137:3306/stock-analyzer
-    username: test
+    url: jdbc:mysql://192.168.140.128:3306/stock-analyzer
+    username: root
     password: Root@123
   mvc:
     view:

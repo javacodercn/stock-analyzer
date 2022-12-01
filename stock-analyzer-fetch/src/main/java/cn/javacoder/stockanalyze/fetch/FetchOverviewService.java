@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Date;
 
 
 /**
@@ -22,17 +23,19 @@ import java.util.Calendar;
 @Slf4j
 public class FetchOverviewService {
 
-    private String shUrl = "http://www.sse.com.cn/market/stockdata/statistic/";
+    private static String shUrl = "http://query.sse.com.cn/commonQuery.do?jsonCallBack=jsonpCallback15022355" +
+            "&sqlId=COMMON_SSE_SJ_GPSJ_GPSJZM_TJSJ_L&PRODUCT_NAME=%E8%82%A1%E7%A5%A8%2C%E4%B8%BB%E6%9D%BF%2C%E7%A7%91%E5%88%9B%E6%9D%BF" +
+            "&type=inParams&TRADE_DATE=&_=";
 
-    private String szUrl = "http://www.szse.cn/api/report/ShowReport/data?" +
+    private static String szUrl = "http://www.szse.cn/api/report/ShowReport/data?" +
             "SHOWTYPE=JSON&CATALOGID=1803_after&TABKEY=tab1&random=0.3767021739561307";
 
-    private String gdpUrl = "https://data.stats.gov.cn/search.htm?s=GDP&m=searchdata&db=&p=0";
+    private static String gdpUrl = "https://data.stats.gov.cn/search.htm?s=GDP&m=searchdata&db=&p=0";
 
     /**
      * 抓取的为 https://data.stats.gov.cn/search.htm?s=GDP 页面数据
      */
-    public long fetchGdpInfo() throws IOException {
+    public static long fetchGdpInfo() throws IOException {
         int year = Calendar.getInstance().get(Calendar.YEAR);
         Connection conn = Jsoup.connect(gdpUrl);
         conn.method(Connection.Method.GET);
@@ -53,7 +56,7 @@ public class FetchOverviewService {
         return 0;
     }
 
-    public Overview getSZOverview() throws Exception {
+    public static Overview getSZOverview() throws Exception {
         String requestUrl = szUrl + "&txtQueryDate=" + MiscUtils.formatYesterday();
         Connection conn = Jsoup.connect(requestUrl);
         conn.method(Connection.Method.GET);
@@ -79,31 +82,43 @@ public class FetchOverviewService {
         }
         return overview;
     }
-    public Overview getSHOverview() throws Exception {
-        Connection conn = Jsoup.connect(shUrl);
-        Document doc = conn.get();
-        Elements elements = doc.select(".sse_home_in_table2").get(0).select("table>tbody>tr>td");
+    public static  Overview getSHOverview() throws Exception {
+        Connection.Response response = Jsoup.connect(shUrl + "1669814045757")
+                .header("Accept", "*/*")
+                .header("Referer", "http://www.sse.com.cn/")
+                .ignoreContentType(true)
+                .method(Connection.Method.GET)
+                .execute();
+        String json = response.body().replaceFirst("jsonpCallback15022355\\(", "");
+        json = json.substring(0, json.length() -1);
+        JSONObject ctx = JSON.parseObject(json).getJSONArray("result").getJSONObject(0);
         Overview overview = new Overview();
-        if(elements != null && !elements.isEmpty()) {
-            for(Element td : elements) {
-                if(td.html().contains("总市值/亿元")) {
-                    String str = td.child(1).text();
-                    overview.setMarketCapitalization(MiscUtils.convert2intWith2P(str));
-                } else if(td.html().contains("平均市盈率/倍")) {
-                    String str = td.child(1).text();
-                    overview.setAvgPe(MiscUtils.convert2intWith2P(str));
-                }
-            }
-        }
+        overview.setAvgPe(MiscUtils.convert2intWith2P(ctx.getString("AVG_PE_RATIO")));
+        overview.setMarketCapitalization(MiscUtils.convert2intWith2P(ctx.getString("TOTAL_VALUE")));
         return overview;
     }
 
+    /**
+     * 10年期国债收益率
+     * https://www.chinamoney.com.cn/chinese/sddsint/
+     */
+    public static  void fetchBond10Y() throws IOException {
+        String url = "https://www.chinamoney.com.cn/r/cms/www/chinamoney/data/currency/sdds-intr-rate.json?t=" + System.currentTimeMillis();
+        Connection.Response response = Jsoup.connect(url)
+        .header("Accept", "application/json, text/javascript, */*; q=0.01")
+        .ignoreContentType(true)
+        .method(Connection.Method.POST)
+                .execute();
+        JSONObject ctx = JSON.parseObject(response.body());
+        log.info(ctx.getJSONObject("data").getDouble("bond10Y").toString());
+    }
+
     public static void main(String[] args) throws Exception {
-        FetchOverviewService service = new FetchOverviewService();
-        Overview sz = service.getSZOverview();
-        Overview sh = service.getSHOverview();
-        log.info("sh:{}, sz:{}", sh, sz);
-        log.info("gdp:{} sh+sz:{}", service.fetchGdpInfo(), sh.getMarketCapitalization() + sz.getMarketCapitalization()) ;
+        System.out.println(fetchGdpInfo());
+        Overview overview = getSHOverview();
+        System.out.println(overview.getAvgPe() + "--->" + overview.getMarketCapitalization());
+        overview = getSZOverview();
+        System.out.println(overview.getAvgPe() + "--->" + overview.getMarketCapitalization());
     }
 
 

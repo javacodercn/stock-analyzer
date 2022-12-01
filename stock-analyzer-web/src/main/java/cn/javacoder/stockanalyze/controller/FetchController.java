@@ -5,16 +5,12 @@ import cn.javacoder.stockanalyze.fetch.*;
 import com.alibaba.druid.util.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.jws.WebParam;
-import java.util.Arrays;
 import java.util.List;
 
-@Controller
+@RestController
 public class FetchController {
 
     @Resource
@@ -47,8 +43,8 @@ public class FetchController {
     public String fetch() throws Exception {
         List<Company> companyList = service.fetchSHStockCode();
         service.saveOrUpdate(companyList);
-        companyList = service.fetchSZStockCode();
-        service.saveOrUpdate(companyList);
+        //companyList = service.fetchSZStockCode();
+        //service.saveOrUpdate(companyList);
         return "companyList.size:" + companyList.size();
     }
 
@@ -59,6 +55,12 @@ public class FetchController {
         return "fetchBasic finished:";
     }
 
+    @GetMapping("/fetchEm")
+    @ResponseBody
+    public String fetchEm(@RequestParam("exchange") String exchange) throws Exception {
+        fetchBasicDataService.fetchEm(exchange);
+        return "fetchBasic finished:";
+    }
 
     @RequestMapping("/fetchHolder")
     @ResponseBody

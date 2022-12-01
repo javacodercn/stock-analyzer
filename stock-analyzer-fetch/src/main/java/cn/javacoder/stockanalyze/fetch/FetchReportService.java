@@ -35,7 +35,7 @@ public class FetchReportService {
 
 
     public void fetchReports(String exchange) throws Exception {
-        List<Company> companies = companyService.listByExchangeCode(exchange);
+        List<Company> companies = companyService.listByExchangeCode(exchange, null);
         for(Company company : companies) {
             if(reportService.exist(company.getStockCode())){
                 log.info("report for {} exist , ignore", company.getStockCode());

@@ -33,7 +33,7 @@ public class FetchStockCodeService {
     @Resource
     private CompanyService companyService;
 
-    private String shUrl = "http://www.sse.com.cn/js/common/ssesuggestdata.js?v=2021122110";
+    private String shUrl = "http://www.sse.com.cn/js/common/ssesuggestdata.js?";
 
     Pattern shPattern = Pattern.compile("(\\{.+\\})");
 
@@ -58,6 +58,7 @@ public class FetchStockCodeService {
                         .stockCode(obj.getString("val"))
                         .name(obj.getString("val2"))
                         .var3(obj.getString("val3"))
+                        .exchange("SH")
                         .build();
                 if(!stockCodeList.contains(c.getStockCode())) {
                     result.add(c);
@@ -103,7 +104,7 @@ public class FetchStockCodeService {
     }
 
     public List<Company> fetchSZStockCode() throws Exception {
-        String fileName="D:\\Downloads\\A股列表.xlsx";
+        String fileName="C:\\Users\\Rex\\Downloads\\A股列表.xlsx";
         return parseSZStockCode(fileName);
     }
 

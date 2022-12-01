@@ -25,5 +25,6 @@ public class HistoryCoreMetric {
 
     private int roekcjq;
 
+    //资产负载率
     private int zcfzl;
 }

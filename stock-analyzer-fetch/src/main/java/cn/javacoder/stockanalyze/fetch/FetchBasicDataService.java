@@ -12,6 +12,7 @@ import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -22,6 +23,7 @@ import java.util.List;
 @Service
 public class FetchBasicDataService {
     //深圳为0.xxxx, 上海为1.xxxx
+    //来源为wap端https://emh5.eastmoney.com/html/?fc=00200102&color=w#/cpbd 中的钞票必读
     String url_format = "https://datacenter.eastmoney.com/securities/api/data/v1/get?" +
             "reportName=RPT_DMSK_NEWINDICATOR&columns=SECUCODE%2CSECURITY_CODE%2CORG_CODE%2CSECURITY_NAME_ABBR%2CEPS%2CBVPS" +
             "%2CTOTAL_OPERATE_INCOME%2COPERATE_INCOME_RATIO%2CNETPROFIT%2CNETPROFIT_RATIO%2CGROSS_PROFIT_RATIO%2CNPR%2CROE" +
@@ -39,24 +41,55 @@ public class FetchBasicDataService {
             "%2Cf114~01~SECURITY_CODE~PE_STATIC%2Cf115~01~SECURITY_CODE~PE_TTM%2Cf21~01~SECURITY_CODE~MARKETCAP_FREE_A%2Cf2~01~SECURITY_CODE~f2" +
             "%2Cf18~01~SECURITY_CODE~f18&pageNumber=1&pageSize=200&v=07571448539876571";
 
+    //wap端， 必读， 公司概况
+    String em_forma = "https://datacenter.eastmoney.com/securities/api/data/get?type=RPT_F10_ORG_BASICINFO&sty=EM2016&" +
+            "client=APP&source=SECURITIES&v=001513614845299105";
+
     @Resource
     private CompanyService companyService;
 
 
+    public void fetchEm(String exchange) throws Exception {
+        List<Company> list = companyService.listByExchangeCode(exchange, null);
+        for(Company company : list) {
+            getBasicEm(company);
+            companyService.updateById(company);
+        }
+    }
+
     public void fetchBasicForAllCompanies() throws Exception {
-        List<Company> list = companyService.listByExchangeCode("SH");
+        Date date = new Date(System.currentTimeMillis() - 90 * 24 * 3600 * 1000);
+        List<Company> list = companyService.listByExchangeCode("SH", date);
         for(Company company : list) {
             if(null != getBasic(company)) {
+                company.setUpdateTime(new Date());
                 companyService.updateById(company);
             }
         }
 
-        list = companyService.listByExchangeCode("SZ");
+        list = companyService.listByExchangeCode("SZ", date);
         for(Company company : list) {
             if(null != getBasic(company)) {
+                company.setUpdateTime(new Date());
                 companyService.updateById(company);
             }
         }
+    }
+
+    public Company getBasicEm(Company company) throws Exception {
+        String secid= company.getStockCode() + "." + company.getExchange();
+        String filter = "&filter=(SECUCODE%3D%22" + secid + "%22)";
+        Connection conn = Jsoup.connect(em_forma + filter);
+        conn.method(Connection.Method.GET);
+        conn.header("accept", "text/html,application/json");
+        conn.ignoreContentType(true);
+        conn.header("user-agent", "Chrome/96.0.4664.110");
+        String json = conn.execute().body();
+        company = parseEm(company, secid, json);
+        if(company == null) {
+            return null;
+        }
+        return company;
     }
 
     public Company getBasic(Company company) throws Exception {
@@ -78,6 +111,25 @@ public class FetchBasicDataService {
         Thread.sleep(System.currentTimeMillis()%50);
         return company;
     }
+
+    public Company parseEm(Company company, String _scode, String content) {
+        JSONObject context = JSON.parseObject(content);
+        if (content == null || context.getJSONObject("result") == null || context.getJSONObject("result").getJSONArray("data") == null) {
+            log.warn("result for {} is empty", _scode);
+            return null;
+        }
+        JSONArray arr = JSON.parseObject(content).getJSONObject("result").getJSONArray("data");
+        if(arr.size() == 0){
+            return null;
+        }
+        String em = arr.getJSONObject(0).getString("EM2016");
+        String[] emArr = em.split("-");
+        company.setEm1(emArr[0]);
+        company.setEm2(emArr[1]);
+        company.setEm3(emArr[2]);
+        return company;
+    }
+
 
     public Company parse(Company company, String _scode, String content) {
         JSONObject context = JSON.parseObject(content);
